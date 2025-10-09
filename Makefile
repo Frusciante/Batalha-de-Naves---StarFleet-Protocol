@@ -1,6 +1,6 @@
 CC := gcc
 
-CFLAGS := -I.
+CFLAGS := -I. 
 
 SRC_SERVER := $(shell find src_server -name '*.c')
 SRC_CLIENT := $(shell find src_client -name '*.c')
@@ -12,11 +12,11 @@ all: $(EXE_CLIENT) $(EXE_SERVER)
 
 $(EXE_SERVER): $(SRC_SERVER)
 	@mkdir -p bin
-	$(CC) $(CFLAGS) $(EXE_SERVER) -o $(SRC_SERVER)
+	$(CC) $(CFLAGS) $(SRC_SERVER) -o $(EXE_SERVER)
 
 $(EXE_CLIENT): $(SRC_CLIENT)
 	@mkdir -p bin
-	$(CC) $(CFLAGS) $(EXE_CLIENT) -o $(SRC_CLIENT)
+	$(CC) $(CFLAGS) $(SRC_CLIENT) -o $(EXE_CLIENT)
 
 clean:
 	rm -f $(EXE_CLIENT) $(EXE_SERVER)
