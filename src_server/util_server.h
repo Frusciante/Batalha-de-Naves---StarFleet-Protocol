@@ -10,11 +10,10 @@
 #include <string.h>
 #include <errno.h>
 
-#include "structures.h"
+#include "../util_all.h"
 
 #define BACKLOG_SIZE 10
 
-void error_handling(const char* errmsg, int errno_exists, int shutdown_program);
 int init_socket(int address_family, unsigned short target_port);
 int battle(int sock);
 int get_battle_result(BattleMessage* bm, Inventory* inventory);

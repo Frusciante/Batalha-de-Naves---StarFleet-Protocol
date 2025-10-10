@@ -42,7 +42,7 @@ int main(int argc, char* argv[])
     while (1)
     {
         clnt_sock = accept(serv_sock, (struct sockaddr*)&clnt_addr, &clnt_addr_len);
-        if (clnt_sock = -1)
+        if (clnt_sock == -1)
         {
             error_handling("accpet() error occured", 1, 0);
             continue;
