@@ -37,8 +37,6 @@ int main(int argc, char* argv[])
 
     serv_sock = init_socket(ip_type, (unsigned short)port);
 
-
-    srand(time(NULL));
     while (1)
     {
         clnt_sock = accept(serv_sock, (struct sockaddr*)&clnt_addr, &clnt_addr_len);
@@ -48,7 +46,9 @@ int main(int argc, char* argv[])
             continue;
         }
         
+        srand(time(NULL));
         if (-1 == battle(clnt_sock)) { error_handling("The game closed unexpectedly.", 0, 0); }
+        // sleep(1);
         close(clnt_sock);
     }
 

@@ -55,13 +55,29 @@ int battle(int sock)
         }
         else
         {
+            ++inventory.total_turns;
             battle_message.server_action = rand() % ACTION_CNT;
-
             if (-1 == get_battle_result(&battle_message, &inventory)) { return 1; }
             if (!(battle_message.client_hp > 0 && battle_message.server_hp > 0)) { battle_message.type = MSG_GAME_OVER; }
+            send(sock, &battle_message, sizeof(battle_message), 0);
+            
             if (battle_message.type == MSG_GAME_OVER || battle_message.type == MSG_ESCAPE) { break; }
         }
     }
+
+    if (battle_message.type == MSG_GAME_OVER)
+    {
+        strncpy_safer(battle_message.message, 
+            (battle_message.client_hp > battle_message.server_hp ? "Você derrotou a frota inimiga!" : 
+            (battle_message.client_hp < battle_message.server_hp ? "Sua nave foi destruída!" : "Ambos foram destruída!")), sizeof(battle_message));
+    }
+
+    battle_message.type = MSG_INVENTORY;
+    battle_message.client_shields = inventory.client_shields;
+    battle_message.server_hp = inventory.server_hp;
+    battle_message.client_hp = inventory.client_hp;
+    battle_message.client_torpedoes = inventory.client_shields;
+    battle_message.client_action = inventory.total_turns;
 
     send(sock, &battle_message, sizeof(battle_message), 0);
 
