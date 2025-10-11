@@ -10,7 +10,7 @@
 #include <string.h>
 #include <errno.h>
 
-#include "../util_all.h"
+#include "../src_common/util_common.h"
 
 
 int init_socket(const char* ip_str, const char* port_str);

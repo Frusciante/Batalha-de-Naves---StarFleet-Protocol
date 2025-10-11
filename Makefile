@@ -4,7 +4,7 @@ CFLAGS := -g
 
 SRC_SERVER := $(shell find src_server -name '*.c') 
 SRC_CLIENT := $(shell find src_client -name '*.c') 
-SRC_COMMON := $(shell find . -maxdepth 1 -name '*.c')
+SRC_COMMON := $(shell find src_common -name '*.c')
 
 OBJ_SERVER := $(SRC_SERVER:.c=.o)
 OBJ_CLIENT := $(SRC_CLIENT:.c=.o)
