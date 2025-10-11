@@ -1,13 +1,13 @@
 #include "util_server.h"
 
-static const char* const STR_MSG_WELCOME = "Conectado ao servidor.\nSua nave: SS-42 Voyager (HP: 100)\n\n";
+static const char* const STR_MSG_WELCOME = "Conectado ao servidor.\nSua nave: SS-42 Voyager (HP: 100)\n";
 static const char* const STR_MSG_LASER = "disparou um Lazer!\n";
 static const char* const STR_MSG_PHOTON_TORPEDO = "disparou um Photon Torpedo!\n";
 static const char* const STR_MSG_ESCUDOS = "ativou os Escudos!\n";
 static const char* const STR_MSG_CLOAKING = "ativou Cloaking!\n";
 static const char* const STR_MSG_HYPER_JUMP = "acionou Hyper Jump!\n";
-static const char* const STR_MSG_RUN = "escapou para o hiperespaço\n";
-static const char* const STR_MSG_ACTION_SELECTION = "Escolha sua ação\n0 - Laser Attack\n1 - Photon Torpedo\n2 - Shields Up\n3 - Cloaking\n4 - Hyper Jump\n\n> ";
+static const char* const STR_MSG_RUN = "escapou para o hiperespaço.\n";
+static const char* const STR_MSG_ACTION_SELECTION = "\nEscolha sua ação\n0 - Laser Attack\n1 - Photon Torpedo\n2 - Shields Up\n3 - Cloaking\n4 - Hyper Jump\n\n> ";
 static const char* const STR_MSG_TEMPLATE = "Você %sServidor %sResultado: %sPlacar: Você %d x %d Inimigo\n";
 
 int init_socket(int address_family, unsigned short target_port)
@@ -51,7 +51,7 @@ int battle(int sock)
     strncpy_safer(bm.message, STR_MSG_WELCOME, sizeof(bm.message));
     send(sock, (void *)&bm, sizeof(bm), 0);
 
-    for (;;)
+    while (bm.type != MSG_ESCAPE && bm.type != MSG_GAME_OVER)
     {
         bm.type = MSG_ACTION_REQ;
         strncpy_safer(bm.message, STR_MSG_ACTION_SELECTION, sizeof(bm.message));
@@ -61,19 +61,13 @@ int battle(int sock)
         bm.type = MSG_BATTLE_RESULT;
         if (bm.client_action < 0 || bm.client_action > 4) 
         {
-            strncpy_safer(bm.message, "Erro: escolha inválida!\nPor favor selecione um valor entre 0 a 4.\n\n", sizeof(bm.message));
+            strncpy_safer(bm.message, ERR_MSG, sizeof(bm.message));
         }
         else
         {
             ++inventory.total_turns;
             bm.server_action = rand() % ACTION_CNT;
             
-            // to facilitate the debugging
-            if (bm.server_action == HYPER_JUMP)
-            {
-                bm.server_action = LASER_ATTACK;
-            }
-
             if (-1 == get_battle_result(&bm, &inventory)) { return 1; }
             if ((inventory.client_hp <= 0 || inventory.server_hp <= 0) || bm.type == MSG_ESCAPE)
             {
@@ -81,13 +75,12 @@ int battle(int sock)
                 {
                     bm.type = MSG_GAME_OVER;
                 }
-                break;
             }
-
-            send(sock, &bm, sizeof(bm), 0);
         }
+        send(sock, &bm, sizeof(bm), 0);
     }
 
+    strncpy_safer(bm.message, "\nFim de Jogo!", sizeof(bm.message));
     send(sock, &bm, sizeof(bm), 0);
 
     if (bm.type == MSG_GAME_OVER)
@@ -122,7 +115,7 @@ int get_battle_result(BattleMessage *bm, Inventory *inventory)
     if (bm->client_action == HYPER_JUMP || bm->server_action == HYPER_JUMP)
     {
         snprintf(bm->message, sizeof(bm->message),
-                 "%s%s%s%s%s%s%s%s\n",
+                 "%s%s%s%s%s%s%s%s",
                  (bm->client_action == HYPER_JUMP ? "Você " : ""), (bm->client_action == HYPER_JUMP ? STR_MSG_HYPER_JUMP : ""),
                  (bm->server_action == HYPER_JUMP ? "Servidor " : ""), (bm->server_action == HYPER_JUMP ? STR_MSG_HYPER_JUMP : ""),
                  (bm->client_action == HYPER_JUMP ? "Sua nave " : ""), (bm->client_action == HYPER_JUMP ? STR_MSG_RUN : ""),
@@ -142,7 +135,7 @@ int get_battle_result(BattleMessage *bm, Inventory *inventory)
             break;
         case CLOACKING:
             inventory->server_hp -= 20;
-            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_LASER, STR_MSG_ESCUDOS, "Acerto! Nave inimiga perdeu 20 HP.\n", inventory->client_hp, inventory->server_hp);
+            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_LASER, STR_MSG_CLOAKING, "Acerto! Nave inimiga perdeu 20 HP.\n", inventory->client_hp, inventory->server_hp);
             break;
         case PHOTON_TORPEDO:
             inventory->client_hp -= 20;
