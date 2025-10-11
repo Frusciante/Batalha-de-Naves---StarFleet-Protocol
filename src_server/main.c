@@ -3,6 +3,11 @@
 #include <locale.h>
 #include "util_server.h"
 
+extern const int OPT_ON;
+extern const int KEEP_IDLE_TIME;
+extern const int KEEP_INTERVAL;
+extern const int KEEP_CNT;
+
 int main(int argc, char* argv[])
 {
     int serv_sock = 0;
@@ -17,6 +22,7 @@ int main(int argc, char* argv[])
 
     setlocale(LC_ALL, "");
     srand(time(NULL));
+    signal(SIGPIPE, SIG_IGN);
 
     if (argc != 3)
     {
@@ -28,14 +34,14 @@ int main(int argc, char* argv[])
     else if (strcmp(argv[1], "v6") == 0) { ip_type = AF_INET6; }
     else
     {
-        snprintf(error_string, ERR_STRING_LEN - 1, "IP type should be 'v4' or 'v6'. Your input : %s", argv[1]);
+        snprintf(error_string, ERR_STRING_LEN - 1, "IP type should be 'v4' or 'v6'. Your input : %s\n", argv[1]);
         error_handling(error_string, 0, 1);
     }
 
     port = atoi(argv[2]);
     if (port <= 1023 || port > 65535)
     {
-        snprintf(error_string, ERR_STRING_LEN - 1, "Port should be an integer between 1024 and 65535. Your input : %s", argv[2]);
+        snprintf(error_string, ERR_STRING_LEN - 1, "Port should be an integer between 1024 and 65535. Your input : %s\n", argv[2]);
         error_handling(error_string, 0, 1);
     }
 
@@ -43,9 +49,11 @@ int main(int argc, char* argv[])
     switch (serv_sock)
     {
     case -1:
-        error_handling("NULL pointer error occured.", 0, 1);
+        error_handling("NULL pointer error occured.\n", 0, 1);
+        break;
     case 1:
         error_handling("Error occured while initizlizing a socket", 1, 1);
+        break;
     }
 
     while (1)
@@ -68,10 +76,19 @@ int main(int argc, char* argv[])
             error_handling("accpet() error occured", 1, 0);
             continue;
         }
+
+        setsockopt(clnt_sock, SOL_SOCKET, SO_KEEPALIVE, (void *)&OPT_ON, sizeof(OPT_ON));
+        setsockopt(clnt_sock, IPPROTO_TCP, TCP_KEEPIDLE, (void *)&KEEP_IDLE_TIME, sizeof(KEEP_IDLE_TIME));
+        setsockopt(clnt_sock, IPPROTO_TCP, TCP_KEEPINTVL, (void *)&KEEP_INTERVAL, sizeof(KEEP_INTERVAL));
+        setsockopt(clnt_sock, IPPROTO_TCP, TCP_KEEPCNT, (void *)&KEEP_CNT, sizeof(KEEP_CNT));
+
         if (battle(clnt_sock))
+            
         {
             error_handling("The game closed unexpectedly.", 0, 0);
         }
+
+        close(clnt_sock);
     }
 
     close(serv_sock);

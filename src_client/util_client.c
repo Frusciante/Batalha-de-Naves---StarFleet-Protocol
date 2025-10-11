@@ -1,5 +1,10 @@
 #include "util_client.h"
 
+extern const int OPT_ON;
+extern const int KEEP_IDLE_TIME;
+extern const int KEEP_INTERVAL;
+extern const int KEEP_CNT;
+
 int init_socket(const char* ip_str, const char* port_str)
 {
     struct sockaddr_in serv_addr_v4;
@@ -39,11 +44,23 @@ int init_socket(const char* ip_str, const char* port_str)
         serv_addr_v4.sin_family = AF_INET;
         serv_addr = (struct sockaddr*)&serv_addr_v4;
         serv_addr_len = sizeof(serv_addr_v4);
+        break;
     }
 
     sock = socket((serv_addr_len == 16UL ? AF_INET : AF_INET6), SOCK_STREAM, 0);
-    if (-1 == sock) { return -1; }
-    if (-1 == connect(sock, serv_addr, serv_addr_len)) { return -1; }
+    if (-1 == sock)
+    {
+        return -1;
+    }
+    if (-1 == connect(sock, serv_addr, serv_addr_len))
+    {
+        return -1;
+    }
+
+    setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (void *)&OPT_ON, sizeof(OPT_ON));
+    setsockopt(sock, IPPROTO_TCP, TCP_KEEPIDLE, (void *)&KEEP_IDLE_TIME, sizeof(KEEP_IDLE_TIME));
+    setsockopt(sock, IPPROTO_TCP, TCP_KEEPINTVL, (void *)&KEEP_INTERVAL, sizeof(KEEP_INTERVAL));
+    setsockopt(sock, IPPROTO_TCP, TCP_KEEPCNT, (void *)&KEEP_CNT, sizeof(KEEP_CNT));
 
     return sock;
 }
@@ -56,11 +73,21 @@ int battle(int sock)
 
     for (;;)
     {
-        recv(sock, &bm, sizeof(bm), 0);
+        switch (recv(sock, &bm, sizeof(bm), 0))
+        {
+        case 0:
+            close(sock);
+            error_handling("Lost connection to the server.\n", 0, 1);
+            return 2;
+        case -1:
+            close(sock);
+            error_handling(ERR_CONNECTION, 1, 1);
+            return 2;
+        }
         switch (bm.type)
         {
         case MSG_ACTION_REQ:
-            while (1)
+            for (;;)
             {
                 printf("%s", bm.message);
                 fgets(input_buffer, sizeof(input_buffer), stdin);
@@ -70,7 +97,12 @@ int battle(int sock)
             }
             bm.type = MSG_ACTION_RES;
             bm.client_action = input_int;
-            send(sock, &bm, sizeof(bm), 0); 
+            if (-1 == send(sock, &bm, sizeof(bm), 0))
+            {
+                close(sock);
+                error_handling(ERR_CONNECTION, 1, 1);
+                return 2;
+            } 
             break;
         case MSG_BATTLE_RESULT:
         case MSG_INIT:

@@ -49,15 +49,34 @@ int battle(int sock)
     Inventory inventory = {100, 100, 0, 0, 0};
     bm.type = MSG_INIT;
     strncpy_safer(bm.message, STR_MSG_WELCOME, sizeof(bm.message));
-    send(sock, (void *)&bm, sizeof(bm), 0);
+    if (-1 == send(sock, (void *)&bm, sizeof(bm), 0))
+    {
+        error_handling(ERR_CONNECTION, 1, 0);
+        return 0;
+    }
 
     while (bm.type != MSG_ESCAPE && bm.type != MSG_GAME_OVER)
     {
         bm.type = MSG_ACTION_REQ;
         strncpy_safer(bm.message, STR_MSG_ACTION_SELECTION, sizeof(bm.message));
-        send(sock, (void *)&bm, sizeof(bm), 0);
-        recv(sock, (void *)&bm, sizeof(bm), 0);
+        if (-1 == send(sock, (void *)&bm, sizeof(bm), 0))
+        {
+            error_handling(ERR_CONNECTION, 1, 0);
+            return 0;
+        }
         
+        switch (recv(sock, &bm, sizeof(bm), 0))
+        {
+        case 0:
+            close(sock);
+            error_handling("Lost connection to the client.\n", 0, 0);
+            return 0;
+        case -1:
+            close(sock);
+            error_handling(ERR_CONNECTION, 1, 0);
+            return 0;
+        }
+
         bm.type = MSG_BATTLE_RESULT;
         if (bm.client_action < 0 || bm.client_action > 4) 
         {
@@ -77,11 +96,19 @@ int battle(int sock)
                 }
             }
         }
-        send(sock, &bm, sizeof(bm), 0);
+        if (-1 == send(sock, &bm, sizeof(bm), 0))
+        {
+            error_handling(ERR_CONNECTION, 1, 0);
+            return 0;
+        }
     }
 
     strncpy_safer(bm.message, "\nFim de Jogo!", sizeof(bm.message));
-    send(sock, &bm, sizeof(bm), 0);
+    if (-1 == send(sock, &bm, sizeof(bm), 0))
+    {
+        error_handling(ERR_CONNECTION, 1, 0);
+        return 0;
+    }
 
     if (bm.type == MSG_GAME_OVER)
     {
@@ -99,7 +126,11 @@ int battle(int sock)
     bm.client_hp = inventory.client_hp;
     bm.client_torpedoes = inventory.client_torpedoes;
     bm.client_action = inventory.total_turns;
-    send(sock, &bm, sizeof(bm), 0);
+    if (-1 == send(sock, &bm, sizeof(bm), 0))
+    {
+        error_handling(ERR_CONNECTION, 1, 0);
+        return 0;
+    }
 
     return 0;
 }

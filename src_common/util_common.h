@@ -4,12 +4,15 @@
 #define MSG_SIZE 256
 #define ERR_STRING_LEN 256
 #define ERR_MSG "Erro: escolha inválida!\nPor favor selecione um valor entre 0 a 4.\n"
+#define ERR_CONNECTION "\nError occured. Closing connection..."
 
 #include <string.h>
 #include <errno.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <signal.h>
+#include <netinet/tcp.h>
 
 typedef enum 
 {
