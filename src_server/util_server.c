@@ -1,6 +1,6 @@
 #include "util_server.h"
 
-static const char* const STR_MSG_WELCOME = "Conectado ao servidor.\nSua nave: SS-42 Voyager (HP: 100)\n";
+static const char* const STR_MSG_WELCOME = "Conectado ao servidor.\nSua nave: SS-42 Voyager (HP: 100)\n\n";
 static const char* const STR_MSG_LASER = "disparou um Lazer!\n";
 static const char* const STR_MSG_PHOTON_TORPEDO = "disparou um Photon Torpedo!\n";
 static const char* const STR_MSG_ESCUDOS = "ativou os Escudos!\n";
@@ -8,7 +8,7 @@ static const char* const STR_MSG_CLOAKING = "ativou Cloaking!\n";
 static const char* const STR_MSG_HYPER_JUMP = "acionou Hyper Jump!\n";
 static const char* const STR_MSG_RUN = "escapou para o hiperespaço\n";
 static const char* const STR_MSG_ACTION_SELECTION = "Escolha sua ação\n0 - Laser Attack\n1 - Photon Torpedo\n2 - Shields Up\n3 - Cloaking\n4 - Hyper Jump\n\n> ";
-static const char* const STR_MSG_TEMPLATE = "Você %sServidor %sResultado: %sPlacar: Você %d x %d Inimigo";
+static const char* const STR_MSG_TEMPLATE = "Você %sServidor %sResultado: %sPlacar: Você %d x %d Inimigo\n";
 
 int init_socket(int address_family, unsigned short target_port)
 {
@@ -45,55 +45,68 @@ int init_socket(int address_family, unsigned short target_port)
 
 int battle(int sock)
 {
-    BattleMessage battle_message = {};
-    Inventory inventory = {};
-    battle_message.type = MSG_INIT;
-    strncpy_safer(battle_message.message, STR_MSG_WELCOME, sizeof(battle_message.message));
-    send(sock, (void *)&battle_message, sizeof(battle_message), 0);
+    BattleMessage bm = {};
+    Inventory inventory = {100, 100, 0, 0, 0};
+    bm.type = MSG_INIT;
+    strncpy_safer(bm.message, STR_MSG_WELCOME, sizeof(bm.message));
+    send(sock, (void *)&bm, sizeof(bm), 0);
 
     for (;;)
     {
-        battle_message.type = MSG_ACTION_REQ;
-        strncpy_safer(battle_message.message, STR_MSG_ACTION_SELECTION, sizeof(battle_message.message));
-        send(sock, (void *)&battle_message, sizeof(battle_message), 0);
-        recv(sock, (void *)&battle_message, sizeof(battle_message), 0);
+        bm.type = MSG_ACTION_REQ;
+        strncpy_safer(bm.message, STR_MSG_ACTION_SELECTION, sizeof(bm.message));
+        send(sock, (void *)&bm, sizeof(bm), 0);
+        recv(sock, (void *)&bm, sizeof(bm), 0);
         
-        battle_message.type = MSG_BATTLE_RESULT;
-        if (battle_message.client_action < 0 || battle_message.client_action > 4) 
+        bm.type = MSG_BATTLE_RESULT;
+        if (bm.client_action < 0 || bm.client_action > 4) 
         {
-            strncpy_safer(battle_message.message, "Erro: escolha inválida!\nPor favor selecione um valor entre 0 a 4.\n\n", sizeof(battle_message.message));
+            strncpy_safer(bm.message, "Erro: escolha inválida!\nPor favor selecione um valor entre 0 a 4.\n\n", sizeof(bm.message));
         }
         else
         {
             ++inventory.total_turns;
-            battle_message.server_action = rand() % ACTION_CNT;
-            if (-1 == get_battle_result(&battle_message, &inventory)) { return 1; }
-            if (!(inventory.client_hp > 0 && inventory.server_hp > 0) || battle_message.type == MSG_ESCAPE)
+            bm.server_action = rand() % ACTION_CNT;
+            
+            // to facilitate the debugging
+            if (bm.server_action == HYPER_JUMP)
             {
-                if (battle_message.type != MSG_ESCAPE)
+                bm.server_action = LASER_ATTACK;
+            }
+
+            if (-1 == get_battle_result(&bm, &inventory)) { return 1; }
+            if ((inventory.client_hp <= 0 || inventory.server_hp <= 0) || bm.type == MSG_ESCAPE)
+            {
+                if (bm.type != MSG_ESCAPE)
                 {
-                    strncpy_safer(battle_message.message,
-                                (battle_message.client_hp > battle_message.server_hp ? "Você derrotou a frota inimiga!" : 
-                                (battle_message.client_hp < battle_message.server_hp ? "Sua nave foi destruída!" : "Ambos foram destruída!")), sizeof(battle_message));
-                    battle_message.type = MSG_GAME_OVER;
+                    bm.type = MSG_GAME_OVER;
                 }
                 break;
             }
 
-            send(sock, &battle_message, sizeof(battle_message), 0);
+            send(sock, &bm, sizeof(bm), 0);
         }
     }
-    
-    send(sock, &battle_message, sizeof(battle_message), 0);
 
-    battle_message.type = MSG_INVENTORY;
-    battle_message.client_shields = inventory.client_shields;
-    battle_message.server_hp = inventory.server_hp;
-    battle_message.client_hp = inventory.client_hp;
-    battle_message.client_torpedoes = inventory.client_shields;
-    battle_message.client_action = inventory.total_turns;
+    send(sock, &bm, sizeof(bm), 0);
 
-    send(sock, &battle_message, sizeof(battle_message), 0);
+    if (bm.type == MSG_GAME_OVER)
+    {
+        strncpy_safer(bm.message,
+                    (inventory.client_hp > inventory.server_hp ? "Você derrotou a frota inimiga!\n" : 
+                    (inventory.client_hp < inventory.server_hp ? "Sua nave foi destruída!\n" : "Ambos foram destruída!\n")), sizeof(bm.message));
+    }
+    else
+    {
+        strncpy_safer(bm.message, "Obrigado por jogar!\n", sizeof(bm.message));
+    }
+    bm.type = MSG_INVENTORY;
+    bm.client_shields = inventory.client_shields;
+    bm.server_hp = inventory.server_hp;
+    bm.client_hp = inventory.client_hp;
+    bm.client_torpedoes = inventory.client_torpedoes;
+    bm.client_action = inventory.total_turns;
+    send(sock, &bm, sizeof(bm), 0);
 
     return 0;
 }
@@ -125,20 +138,20 @@ int get_battle_result(BattleMessage *bm, Inventory *inventory)
         switch (bm->server_action)
         {
         case SHIELDS_UP:
-            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_LASER, STR_MSG_ESCUDOS, "Seu ataque bloqueado!", inventory->client_hp, inventory->server_hp);
+            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_LASER, STR_MSG_ESCUDOS, "Seu ataque bloqueado!\n", inventory->client_hp, inventory->server_hp);
             break;
         case CLOACKING:
             inventory->server_hp -= 20;
-            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_LASER, STR_MSG_ESCUDOS, "Acerto! Nave inimiga perdeu 20 HP.", inventory->client_hp, inventory->server_hp);
+            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_LASER, STR_MSG_ESCUDOS, "Acerto! Nave inimiga perdeu 20 HP.\n", inventory->client_hp, inventory->server_hp);
             break;
         case PHOTON_TORPEDO:
             inventory->client_hp -= 20;
-            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_LASER, STR_MSG_PHOTON_TORPEDO, "Você recebeu 20 de dano.", inventory->client_hp, inventory->server_hp);
+            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_LASER, STR_MSG_PHOTON_TORPEDO, "Você recebeu 20 de dano.\n", inventory->client_hp, inventory->server_hp);
             break;
         case LASER_ATTACK:
             inventory->server_hp -= 20;
             inventory->client_hp -= 20;
-            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_LASER, STR_MSG_LASER, "Ambos receberam 20 de dano.", inventory->client_hp, inventory->server_hp);
+            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_LASER, STR_MSG_LASER, "Ambos receberam 20 de dano.\n", inventory->client_hp, inventory->server_hp);
             break;
         }
         break;
@@ -147,19 +160,19 @@ int get_battle_result(BattleMessage *bm, Inventory *inventory)
         switch (bm->server_action)
         {
         case SHIELDS_UP:
-            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_PHOTON_TORPEDO, STR_MSG_ESCUDOS, "Seu ataque bloqueado!", inventory->client_hp, inventory->server_hp);
+            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_PHOTON_TORPEDO, STR_MSG_ESCUDOS, "Seu ataque bloqueado!\n", inventory->client_hp, inventory->server_hp);
             break;
         case CLOACKING:
-            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_PHOTON_TORPEDO, STR_MSG_CLOAKING, "Seu ataque falhou!", inventory->client_hp, inventory->server_hp);
+            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_PHOTON_TORPEDO, STR_MSG_CLOAKING, "Seu ataque falhou!\n", inventory->client_hp, inventory->server_hp);
             break;
         case LASER_ATTACK:
             inventory->server_hp -= 20;
-            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_PHOTON_TORPEDO, STR_MSG_LASER, "Acerto! Nave inimiga perdeu 20 HP.", inventory->client_hp, inventory->server_hp);
+            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_PHOTON_TORPEDO, STR_MSG_LASER, "Acerto! Nave inimiga perdeu 20 HP.\n", inventory->client_hp, inventory->server_hp);
             break;
         case PHOTON_TORPEDO:
             inventory->server_hp -= 20;
             inventory->client_hp -= 20;
-            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_PHOTON_TORPEDO, STR_MSG_PHOTON_TORPEDO, "Ambos receberam 20 de dano.", inventory->client_hp, inventory->server_hp);
+            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_PHOTON_TORPEDO, STR_MSG_PHOTON_TORPEDO, "Ambos receberam 20 de dano.\n", inventory->client_hp, inventory->server_hp);
             break;
         }
         break;
@@ -171,13 +184,13 @@ int get_battle_result(BattleMessage *bm, Inventory *inventory)
         case CLOACKING:
             snprintf(bm->message,
                      sizeof(bm->message),
-                     STR_MSG_TEMPLATE, STR_MSG_ESCUDOS, (bm->server_action == SHIELDS_UP ? STR_MSG_ESCUDOS : STR_MSG_CLOAKING), "Aconteceu nada.", inventory->client_hp, inventory->server_hp);
+                     STR_MSG_TEMPLATE, STR_MSG_ESCUDOS, (bm->server_action == SHIELDS_UP ? STR_MSG_ESCUDOS : STR_MSG_CLOAKING), "Aconteceu nada.\n", inventory->client_hp, inventory->server_hp);
             break;
         case LASER_ATTACK:
         case PHOTON_TORPEDO:
             snprintf(bm->message,
                      sizeof(bm->message),
-                     STR_MSG_TEMPLATE, STR_MSG_ESCUDOS, (bm->server_action == LASER_ATTACK ? STR_MSG_LASER : STR_MSG_PHOTON_TORPEDO), "Ataque inimigo bloqueado!", inventory->client_hp, inventory->server_hp);
+                     STR_MSG_TEMPLATE, STR_MSG_ESCUDOS, (bm->server_action == LASER_ATTACK ? STR_MSG_LASER : STR_MSG_PHOTON_TORPEDO), "Ataque inimigo bloqueado!\n", inventory->client_hp, inventory->server_hp);
             break;
         }
         break;
@@ -188,14 +201,14 @@ int get_battle_result(BattleMessage *bm, Inventory *inventory)
         case CLOACKING:
             snprintf(bm->message,
                      sizeof(bm->message),
-                     STR_MSG_TEMPLATE, STR_MSG_CLOAKING, (bm->server_action == SHIELDS_UP ? STR_MSG_ESCUDOS : STR_MSG_CLOAKING), "Aconteceu nada.", inventory->client_hp, inventory->server_hp);
+                     STR_MSG_TEMPLATE, STR_MSG_CLOAKING, (bm->server_action == SHIELDS_UP ? STR_MSG_ESCUDOS : STR_MSG_CLOAKING), "Aconteceu nada.\n", inventory->client_hp, inventory->server_hp);
             break;
         case PHOTON_TORPEDO:
-            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_CLOAKING, STR_MSG_PHOTON_TORPEDO, "Ataque inimigo falhou!", inventory->client_hp, inventory->server_hp);
+            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_CLOAKING, STR_MSG_PHOTON_TORPEDO, "Ataque inimigo falhou!\n", inventory->client_hp, inventory->server_hp);
             break;
         case LASER_ATTACK:
             inventory->client_hp -= 20;
-            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_CLOAKING, STR_MSG_LASER, "Você recebeu 20 de dano.", inventory->client_hp, inventory->server_hp);
+            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_CLOAKING, STR_MSG_LASER, "Você recebeu 20 de dano.\n", inventory->client_hp, inventory->server_hp);
             break;
         }
         break;

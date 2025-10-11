@@ -9,11 +9,14 @@ int main(int argc, char* argv[])
     int ip_type;
     int port;
     socklen_t clnt_addr_len;
-    struct sockaddr_storage clnt_addr;
+    struct sockaddr_in clnt_addr_v4 = {};
+    struct sockaddr_in6 clnt_addr_v6 = {};
+    struct sockaddr* clnt_addr = 0;
     char error_string[ERR_STRING_LEN] = {};
     int clnt_sock;
 
     setlocale(LC_ALL, "");
+    srand(time(NULL));
 
     if (argc != 3)
     {
@@ -47,18 +50,31 @@ int main(int argc, char* argv[])
 
     while (1)
     {
-        clnt_sock = accept(serv_sock, (struct sockaddr*)&clnt_addr, &clnt_addr_len);
+        switch (ip_type)
+        {
+        case AF_INET:
+            clnt_addr = (struct sockaddr *)&clnt_addr_v4;
+            clnt_addr_len = sizeof(clnt_addr_v4);
+            break;
+        case AF_INET6:
+            clnt_addr = (struct sockaddr *)&clnt_addr_v6;
+            clnt_addr_len = sizeof(clnt_addr_v6);
+            break;
+        }
+
+        clnt_sock = accept(serv_sock, clnt_addr, &clnt_addr_len);
         if (clnt_sock == -1)
         {
             error_handling("accpet() error occured", 1, 0);
             continue;
         }
-        
-        srand(time(NULL));
-        if (-1 == battle(clnt_sock)) { error_handling("The game closed unexpectedly.", 0, 0); }
-        // sleep(1);
-        close(clnt_sock);
+        if (battle(clnt_sock))
+        {
+            error_handling("The game closed unexpectedly.", 0, 0);
+        }
     }
+
+    close(serv_sock);
 
     return 0;
 }
