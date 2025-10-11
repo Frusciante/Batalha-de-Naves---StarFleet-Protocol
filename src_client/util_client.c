@@ -1,0 +1,90 @@
+#include "util_client.h"
+
+int init_socket(const char* ip_str, const char* port_str)
+{
+    struct sockaddr_in serv_addr_v4;
+    struct sockaddr_in6 serv_addr_v6;
+    struct sockaddr* serv_addr = NULL;
+    socklen_t serv_addr_len;
+    int ip_type;
+    int port;
+    int sock;
+
+    if (!(ip_str && port_str))
+    {
+        return -2;
+    }
+
+    port = atoi(port_str);
+    if (port < 1024 || port > 65535) { return -4; }
+    
+    switch (inet_pton(AF_INET, ip_str, (void*)&serv_addr_v4))
+    {
+    case 0:
+        switch (inet_pton(AF_INET6, ip_str, (void*)&serv_addr_v6)) 
+        { 
+        case 0:
+            return -3;
+        case 1:
+            serv_addr_v6.sin6_port = htons((unsigned short)port);
+            serv_addr_v6.sin6_family = AF_INET6;
+            serv_addr = (struct sockaddr*)&serv_addr_v6;
+            serv_addr_len = sizeof(serv_addr_v6);
+        }
+        break;
+    case -1:
+        return -1;
+    case 1:
+        serv_addr_v4.sin_port = htons((unsigned short)port);
+        serv_addr_v4.sin_family = AF_INET;
+        serv_addr = (struct sockaddr*)&serv_addr_v4;
+        serv_addr_len = sizeof(serv_addr_v4);
+    }
+
+    sock = socket((serv_addr_len == 16UL ? AF_INET : AF_INET6), SOCK_STREAM, 0);
+    if (-1 == sock) { return -1; }
+    if (-1 == connect(sock, serv_addr, serv_addr_len)) { return -1; }
+
+    return sock;
+}
+
+int battle(int sock)
+{
+    BattleMessage bm = {};
+    char input_buffer[11];
+    int input_int = -1;
+
+    for (;;)
+    {
+        recv(sock, &bm, sizeof(bm), 0);
+        switch (bm.type)
+        {
+        case MSG_ACTION_REQ:
+            while (1)
+            {
+                printf("%s", bm.message);
+                fgets(input_buffer, sizeof(input_buffer), stdin);
+                input_int = atoi(input_buffer);
+                if (0 == input_int && 0 != strcmp(input_buffer, "0\n")) { printf(ERR_MSG); }
+                else { break; }
+            }
+            bm.type = MSG_ACTION_RES;
+            bm.client_action = input_int;
+            send(sock, &bm, sizeof(bm), 0); 
+            break;
+        case MSG_BATTLE_RESULT:
+        case MSG_INIT:
+        case MSG_GAME_OVER:
+        case MSG_ESCAPE:
+            printf("%s", bm.message);
+            break;
+        case MSG_INVENTORY:
+            printf("\nInventário final:\n- Seu HP restante: %d\n- HP inimigo restante: %d\n- Total de turnos jogados: %d\n- Torpedos usados: %d\n- Escudos usados: %d\n", 
+                    bm.client_hp, bm.server_hp, bm.client_action, bm.client_torpedoes, bm.client_shields);
+            printf("%s", bm.message);
+            return 0;
+        }
+    }
+
+    return 0;
+}
