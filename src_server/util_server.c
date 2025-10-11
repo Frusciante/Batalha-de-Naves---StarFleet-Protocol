@@ -1,5 +1,15 @@
 #include "util_server.h"
 
+static const char* const STR_MSG_WELCOME = "Conectado ao servidor.\nSua nave: SS-42 Voyager (HP: 100)\n";
+static const char* const STR_MSG_LASER = "disparou um Lazer!\n";
+static const char* const STR_MSG_PHOTON_TORPEDO = "disparou um Photon Torpedo!\n";
+static const char* const STR_MSG_ESCUDOS = "ativou os Escudos!\n";
+static const char* const STR_MSG_CLOAKING = "ativou Cloaking!\n";
+static const char* const STR_MSG_HYPER_JUMP = "acionou Hyper Jump!\n";
+static const char* const STR_MSG_RUN = "escapou para o hiperespaço\n";
+static const char* const STR_MSG_ACTION_SELECTION = "Escolha sua ação\n0 - Laser Attack\n1 - Photon Torpedo\n2 - Shields Up\n3 - Cloaking\n4 - Hyper Jump\n\n> ";
+static const char* const STR_MSG_TEMPLATE = "Você %sServidor %sResultado: %sPlacar: Você %d x %d Inimigo";
+
 int init_socket(int address_family, unsigned short target_port)
 {
     int sock = socket(address_family, SOCK_STREAM, 0);
@@ -58,19 +68,23 @@ int battle(int sock)
             ++inventory.total_turns;
             battle_message.server_action = rand() % ACTION_CNT;
             if (-1 == get_battle_result(&battle_message, &inventory)) { return 1; }
-            if (!(battle_message.client_hp > 0 && battle_message.server_hp > 0)) { battle_message.type = MSG_GAME_OVER; }
+            if (!(inventory.client_hp > 0 && inventory.server_hp > 0) || battle_message.type == MSG_ESCAPE)
+            {
+                if (battle_message.type != MSG_ESCAPE)
+                {
+                    strncpy_safer(battle_message.message,
+                                (battle_message.client_hp > battle_message.server_hp ? "Você derrotou a frota inimiga!" : 
+                                (battle_message.client_hp < battle_message.server_hp ? "Sua nave foi destruída!" : "Ambos foram destruída!")), sizeof(battle_message));
+                    battle_message.type = MSG_GAME_OVER;
+                }
+                break;
+            }
+
             send(sock, &battle_message, sizeof(battle_message), 0);
-            
-            if (battle_message.type == MSG_GAME_OVER || battle_message.type == MSG_ESCAPE) { break; }
         }
     }
-
-    if (battle_message.type == MSG_GAME_OVER)
-    {
-        strncpy_safer(battle_message.message, 
-            (battle_message.client_hp > battle_message.server_hp ? "Você derrotou a frota inimiga!" : 
-            (battle_message.client_hp < battle_message.server_hp ? "Sua nave foi destruída!" : "Ambos foram destruída!")), sizeof(battle_message));
-    }
+    
+    send(sock, &battle_message, sizeof(battle_message), 0);
 
     battle_message.type = MSG_INVENTORY;
     battle_message.client_shields = inventory.client_shields;
@@ -111,24 +125,20 @@ int get_battle_result(BattleMessage *bm, Inventory *inventory)
         switch (bm->server_action)
         {
         case SHIELDS_UP:
-            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_LASER, STR_MSG_ESCUDOS, "Seu ataque bloqueado!", bm->client_hp, bm->server_hp);
+            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_LASER, STR_MSG_ESCUDOS, "Seu ataque bloqueado!", inventory->client_hp, inventory->server_hp);
             break;
         case CLOACKING:
-            bm->server_hp -= 20;
             inventory->server_hp -= 20;
-            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_LASER, STR_MSG_ESCUDOS, "Acerto! Nave inimiga perdeu 20 HP.", bm->client_hp, bm->server_hp);
+            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_LASER, STR_MSG_ESCUDOS, "Acerto! Nave inimiga perdeu 20 HP.", inventory->client_hp, inventory->server_hp);
             break;
         case PHOTON_TORPEDO:
-            bm->client_hp -= 20;
             inventory->client_hp -= 20;
-            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_LASER, STR_MSG_PHOTON_TORPEDO, "Você recebeu 20 de dano.", bm->client_hp, bm->server_hp);
+            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_LASER, STR_MSG_PHOTON_TORPEDO, "Você recebeu 20 de dano.", inventory->client_hp, inventory->server_hp);
             break;
         case LASER_ATTACK:
-            bm->server_hp -= 20;
-            bm->client_hp -= 20;
             inventory->server_hp -= 20;
             inventory->client_hp -= 20;
-            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_LASER, STR_MSG_LASER "Ambos receberam 20 de dano.", bm->client_hp, bm->server_hp);
+            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_LASER, STR_MSG_LASER, "Ambos receberam 20 de dano.", inventory->client_hp, inventory->server_hp);
             break;
         }
         break;
@@ -137,22 +147,19 @@ int get_battle_result(BattleMessage *bm, Inventory *inventory)
         switch (bm->server_action)
         {
         case SHIELDS_UP:
-            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_PHOTON_TORPEDO, STR_MSG_ESCUDOS, "Seu ataque bloqueado!", bm->client_hp, bm->server_hp);
+            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_PHOTON_TORPEDO, STR_MSG_ESCUDOS, "Seu ataque bloqueado!", inventory->client_hp, inventory->server_hp);
             break;
         case CLOACKING:
-            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_PHOTON_TORPEDO, STR_MSG_CLOAKING, "Seu ataque falhou!", bm->client_hp, bm->server_hp);
+            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_PHOTON_TORPEDO, STR_MSG_CLOAKING, "Seu ataque falhou!", inventory->client_hp, inventory->server_hp);
             break;
         case LASER_ATTACK:
-            bm->server_hp -= 20;
             inventory->server_hp -= 20;
-            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_PHOTON_TORPEDO, STR_MSG_LASER, "Acerto! Nave inimiga perdeu 20 HP.", bm->client_hp, bm->server_hp);
+            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_PHOTON_TORPEDO, STR_MSG_LASER, "Acerto! Nave inimiga perdeu 20 HP.", inventory->client_hp, inventory->server_hp);
             break;
         case PHOTON_TORPEDO:
-            bm->server_hp -= 20;
-            bm->client_hp -= 20;
             inventory->server_hp -= 20;
             inventory->client_hp -= 20;
-            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_PHOTON_TORPEDO, STR_MSG_PHOTON_TORPEDO, "Ambos receberam 20 de dano.", bm->client_hp, bm->server_hp);
+            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_PHOTON_TORPEDO, STR_MSG_PHOTON_TORPEDO, "Ambos receberam 20 de dano.", inventory->client_hp, inventory->server_hp);
             break;
         }
         break;
@@ -164,13 +171,13 @@ int get_battle_result(BattleMessage *bm, Inventory *inventory)
         case CLOACKING:
             snprintf(bm->message,
                      sizeof(bm->message),
-                     STR_MSG_TEMPLATE, STR_MSG_ESCUDOS, (bm->server_action == SHIELDS_UP ? STR_MSG_ESCUDOS : STR_MSG_CLOAKING), "Aconteceu nada.", bm->client_hp, bm->server_hp);
+                     STR_MSG_TEMPLATE, STR_MSG_ESCUDOS, (bm->server_action == SHIELDS_UP ? STR_MSG_ESCUDOS : STR_MSG_CLOAKING), "Aconteceu nada.", inventory->client_hp, inventory->server_hp);
             break;
         case LASER_ATTACK:
         case PHOTON_TORPEDO:
             snprintf(bm->message,
                      sizeof(bm->message),
-                     STR_MSG_TEMPLATE, STR_MSG_ESCUDOS, (bm->server_action == LASER_ATTACK ? STR_MSG_LASER : STR_MSG_PHOTON_TORPEDO), "Ataque inimigo bloqueado!", bm->client_hp, bm->server_hp);
+                     STR_MSG_TEMPLATE, STR_MSG_ESCUDOS, (bm->server_action == LASER_ATTACK ? STR_MSG_LASER : STR_MSG_PHOTON_TORPEDO), "Ataque inimigo bloqueado!", inventory->client_hp, inventory->server_hp);
             break;
         }
         break;
@@ -181,15 +188,14 @@ int get_battle_result(BattleMessage *bm, Inventory *inventory)
         case CLOACKING:
             snprintf(bm->message,
                      sizeof(bm->message),
-                     STR_MSG_TEMPLATE, STR_MSG_CLOAKING, (bm->server_action == SHIELDS_UP ? STR_MSG_ESCUDOS : STR_MSG_CLOAKING), "Aconteceu nada.", bm->client_hp, bm->server_hp);
+                     STR_MSG_TEMPLATE, STR_MSG_CLOAKING, (bm->server_action == SHIELDS_UP ? STR_MSG_ESCUDOS : STR_MSG_CLOAKING), "Aconteceu nada.", inventory->client_hp, inventory->server_hp);
             break;
         case PHOTON_TORPEDO:
-            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_CLOAKING, STR_MSG_PHOTON_TORPEDO, "Ataque inimigo falhou!", bm->client_hp, bm->server_hp);
+            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_CLOAKING, STR_MSG_PHOTON_TORPEDO, "Ataque inimigo falhou!", inventory->client_hp, inventory->server_hp);
             break;
         case LASER_ATTACK:
-            bm->client_hp -= 20;
             inventory->client_hp -= 20;
-            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_CLOAKING, STR_MSG_LASER "Você recebeu 20 de dano.", bm->client_hp, bm->server_hp);
+            snprintf(bm->message, sizeof(bm->message), STR_MSG_TEMPLATE, STR_MSG_CLOAKING, STR_MSG_LASER, "Você recebeu 20 de dano.", inventory->client_hp, inventory->server_hp);
             break;
         }
         break;

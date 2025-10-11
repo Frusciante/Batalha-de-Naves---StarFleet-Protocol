@@ -5,7 +5,6 @@
 
 int main(int argc, char* argv[])
 {
-    setlocale(LC_ALL, "");
     int serv_sock = 0;
     int ip_type;
     int port;
@@ -13,6 +12,8 @@ int main(int argc, char* argv[])
     struct sockaddr_storage clnt_addr;
     char error_string[ERR_STRING_LEN] = {};
     int clnt_sock;
+
+    setlocale(LC_ALL, "");
 
     if (argc != 3)
     {
@@ -36,6 +37,13 @@ int main(int argc, char* argv[])
     }
 
     serv_sock = init_socket(ip_type, (unsigned short)port);
+    switch (serv_sock)
+    {
+    case -1:
+        error_handling("NULL pointer error occured.", 0, 1);
+    case 1:
+        error_handling("Error occured while initizlizing a socket", 1, 1);
+    }
 
     while (1)
     {
