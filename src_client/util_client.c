@@ -7,13 +7,13 @@ extern const int KEEP_CNT;
 
 int init_socket(const char* ip_str, const char* port_str)
 {
-    struct sockaddr_in serv_addr_v4;
-    struct sockaddr_in6 serv_addr_v6;
+    struct sockaddr_in serv_addr_v4 = {};
+    struct sockaddr_in6 serv_addr_v6 = {};
     struct sockaddr* serv_addr = NULL;
     socklen_t serv_addr_len;
-    int ip_type;
     int port;
     int sock;
+    int ip_type;
 
     if (!(ip_str && port_str))
     {
@@ -21,33 +21,31 @@ int init_socket(const char* ip_str, const char* port_str)
     }
 
     port = atoi(port_str);
-    if (port < 1024 || port > 65535) { return -4; }
-    
-    switch (inet_pton(AF_INET, ip_str, (void*)&serv_addr_v4))
+    if (port < 1024 || port > 65535)
     {
-    case 0:
-        switch (inet_pton(AF_INET6, ip_str, (void*)&serv_addr_v6)) 
-        { 
-        case 0:
-            return -3;
-        case 1:
-            serv_addr_v6.sin6_port = htons((unsigned short)port);
-            serv_addr_v6.sin6_family = AF_INET6;
-            serv_addr = (struct sockaddr*)&serv_addr_v6;
-            serv_addr_len = sizeof(serv_addr_v6);
-        }
-        break;
-    case -1:
-        return -1;
-    case 1:
-        serv_addr_v4.sin_port = htons((unsigned short)port);
-        serv_addr_v4.sin_family = AF_INET;
-        serv_addr = (struct sockaddr*)&serv_addr_v4;
-        serv_addr_len = sizeof(serv_addr_v4);
-        break;
+        return -4;
     }
 
-    sock = socket((serv_addr_len == 16UL ? AF_INET : AF_INET6), SOCK_STREAM, 0);
+    if (1 == inet_pton(AF_INET, ip_str, (void *)&serv_addr_v4.sin_addr))
+    {
+        ip_type = serv_addr_v4.sin_family = AF_INET;
+        serv_addr_v4.sin_port = htons((unsigned short)port);
+        serv_addr = (struct sockaddr*)&serv_addr_v4;
+        serv_addr_len = sizeof(serv_addr_v4);
+    }
+    else if (1 == inet_pton(AF_INET6, ip_str, (void *)&serv_addr_v6.sin6_addr))
+    {
+        ip_type = serv_addr_v6.sin6_family = AF_INET6;
+        serv_addr_v6.sin6_port = htons((unsigned short)port);
+        serv_addr = (struct sockaddr*)&serv_addr_v6;
+        serv_addr_len = sizeof(serv_addr_v6);
+    }
+    else
+    {
+        return -3;
+    }
+
+    sock = socket(ip_type, SOCK_STREAM, 0);
     if (-1 == sock)
     {
         return -1;
