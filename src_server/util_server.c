@@ -52,7 +52,7 @@ int battle(int sock)
     if (-1 == send(sock, (void *)&bm, sizeof(bm), 0))
     {
         error_handling(ERR_CONNECTION, 1, 0);
-        return 0;
+        return 1;
     }
 
     while (bm.type != MSG_ESCAPE && bm.type != MSG_GAME_OVER)
@@ -62,7 +62,7 @@ int battle(int sock)
         if (-1 == send(sock, (void *)&bm, sizeof(bm), 0))
         {
             error_handling(ERR_CONNECTION, 1, 0);
-            return 0;
+            return 1;
         }
         
         switch (recv(sock, &bm, sizeof(bm), 0))
@@ -70,11 +70,11 @@ int battle(int sock)
         case 0:
             close(sock);
             error_handling("Lost connection to the client.\n", 0, 0);
-            return 0;
+            return 1;
         case -1:
             close(sock);
             error_handling(ERR_CONNECTION, 1, 0);
-            return 0;
+            return 1;
         }
 
         bm.type = MSG_BATTLE_RESULT;
@@ -99,7 +99,7 @@ int battle(int sock)
         if (-1 == send(sock, &bm, sizeof(bm), 0))
         {
             error_handling(ERR_CONNECTION, 1, 0);
-            return 0;
+            return 1;
         }
     }
 
@@ -107,7 +107,7 @@ int battle(int sock)
     if (-1 == send(sock, &bm, sizeof(bm), 0))
     {
         error_handling(ERR_CONNECTION, 1, 0);
-        return 0;
+        return 1;
     }
 
     if (bm.type == MSG_GAME_OVER)
@@ -129,7 +129,7 @@ int battle(int sock)
     if (-1 == send(sock, &bm, sizeof(bm), 0))
     {
         error_handling(ERR_CONNECTION, 1, 0);
-        return 0;
+        return 1;
     }
 
     return 0;

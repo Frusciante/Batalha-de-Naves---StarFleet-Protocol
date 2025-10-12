@@ -74,9 +74,8 @@ int battle(int sock)
         switch (recv(sock, &bm, sizeof(bm), 0))
         {
         case 0:
-            close(sock);
-            error_handling("Lost connection to the server.\n", 0, 1);
-            return 2;
+            error_handling("Lost connection to the server.\n", 0, 0);
+            return 1;
         case -1:
             close(sock);
             error_handling(ERR_CONNECTION, 1, 1);

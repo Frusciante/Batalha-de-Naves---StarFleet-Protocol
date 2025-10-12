@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
     {
     case 1:
         close(sock);
-        error_handling("The game closed unexpectedly.", 0, 0);    
+        error_handling("The game closed unexpectedly.\n", 0, 0);    
         break;
     
     case 0:

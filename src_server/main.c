@@ -10,6 +10,8 @@ extern const int KEEP_CNT;
 
 int main(int argc, char* argv[])
 {
+    char clnt_addr_buf[INET6_ADDRSTRLEN] = {};
+    int battle_result = 0;
     int serv_sock = 0;
     int ip_type;
     int port;
@@ -76,19 +78,51 @@ int main(int argc, char* argv[])
             error_handling("accpet() error occured", 1, 0);
             continue;
         }
+        
+        switch (clnt_addr->sa_family)
+        {
+        case AF_INET:
+            if (NULL != inet_ntop(AF_INET, &((struct sockaddr_in*)clnt_addr)->sin_addr, clnt_addr_buf, sizeof(clnt_addr_buf)))
+            {
+                printf("Connected with user.\nIP - %s\n", clnt_addr_buf);
+            }
+            else
+            {
+                error_handling("Invalid user IP\n", 1, 1);
+            }
+            break;
+        case AF_INET6:
+            if (NULL != inet_ntop(AF_INET6, &((struct sockaddr_in6*)clnt_addr)->sin6_addr, clnt_addr_buf, sizeof(clnt_addr_buf)))
+            {
+                printf("Connected with user.\nIP - %s\n", clnt_addr_buf);
+            }
+            else
+            {
+                error_handling("Invalid user IP\n", 1, 1);
+            }
+            break;
+        }        
 
         setsockopt(clnt_sock, SOL_SOCKET, SO_KEEPALIVE, (void *)&OPT_ON, sizeof(OPT_ON));
         setsockopt(clnt_sock, IPPROTO_TCP, TCP_KEEPIDLE, (void *)&KEEP_IDLE_TIME, sizeof(KEEP_IDLE_TIME));
         setsockopt(clnt_sock, IPPROTO_TCP, TCP_KEEPINTVL, (void *)&KEEP_INTERVAL, sizeof(KEEP_INTERVAL));
         setsockopt(clnt_sock, IPPROTO_TCP, TCP_KEEPCNT, (void *)&KEEP_CNT, sizeof(KEEP_CNT));
 
-        if (battle(clnt_sock))
-            
+        battle_result = battle(clnt_sock);
+
+        switch (battle_result)
         {
-            error_handling("The game closed unexpectedly.", 0, 0);
+        case 0:
+            puts("The game finished successfully.\n");
+            break;
+
+        default:
+            error_handling("The game closed unexpectedly.\n\n", 0, 0);
+            break;
         }
 
         close(clnt_sock);
+        memset(clnt_addr_buf, 0, sizeof(clnt_addr_buf));
     }
 
     close(serv_sock);
