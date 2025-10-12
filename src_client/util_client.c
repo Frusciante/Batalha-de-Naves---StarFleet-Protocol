@@ -5,6 +5,13 @@ extern const int KEEP_IDLE_TIME;
 extern const int KEEP_INTERVAL;
 extern const int KEEP_CNT;
 
+static const char* const STR_MSG_TEMPLATE = "Você %sServidor %sResultado: %sPlacar: Você %d x %d Inimigo\n";
+static const char* const STR_MSG_LASER = "disparou um Lazer!\n";
+static const char* const STR_MSG_PHOTON_TORPEDO = "disparou um Photon Torpedo!\n";
+static const char* const STR_MSG_ESCUDOS = "ativou os Escudos!\n";
+static const char* const STR_MSG_CLOAKING = "ativou Cloaking!\n";
+static const char* const STR_MSG_HYPER_JUMP = "acionou Hyper Jump!\n";
+
 int init_socket(const char* ip_str, const char* port_str)
 {
     struct sockaddr_in serv_addr_v4 = {};
@@ -68,6 +75,8 @@ int battle(int sock)
     BattleMessage bm = {};
     char input_buffer[11];
     int input_int = -1;
+    const char* user_action_str = NULL;
+    const char* server_action_str = NULL;
 
     for (;;)
     {
@@ -99,13 +108,65 @@ int battle(int sock)
                 close(sock);
                 error_handling(ERR_CONNECTION, 1, 1);
                 return 2;
-            } 
+            }
             break;
         case MSG_BATTLE_RESULT:
+            switch (bm.client_action)
+            {
+            case LASER_ATTACK:
+                user_action_str = STR_MSG_LASER;
+                break;
+            case PHOTON_TORPEDO:
+                user_action_str = STR_MSG_PHOTON_TORPEDO;
+                break;
+            case SHIELDS_UP:
+                user_action_str = STR_MSG_ESCUDOS;
+                break;
+            case CLOACKING:
+                user_action_str = STR_MSG_CLOAKING;
+                break;
+            default:
+                user_action_str = NULL;
+                break;
+            }
+            
+            switch (bm.server_action)
+            {
+            case LASER_ATTACK:
+                server_action_str = STR_MSG_LASER;
+                break;
+            case PHOTON_TORPEDO:
+                server_action_str = STR_MSG_PHOTON_TORPEDO;
+                break;
+            case SHIELDS_UP:
+                server_action_str = STR_MSG_ESCUDOS;
+                break;
+            case CLOACKING:
+                server_action_str = STR_MSG_CLOAKING;
+                break;
+            default:
+                server_action_str = NULL;
+                break;
+            }
+            
+            if (!(server_action_str && user_action_str))
+            {
+                return 1;
+            }
+            
+            printf(STR_MSG_TEMPLATE, user_action_str, server_action_str, bm.message, bm.client_hp, bm.server_hp);
+            break;
         case MSG_INIT:
         case MSG_GAME_OVER:
-        case MSG_ESCAPE:
             printf("%s", bm.message);
+            break;
+        case MSG_ESCAPE: 
+            printf("%s%s%s%s%s", 
+                (bm.client_action == HYPER_JUMP ? "Você " : ""), 
+                (bm.client_action == HYPER_JUMP ? STR_MSG_HYPER_JUMP : ""), 
+                (bm.server_action == HYPER_JUMP ? "Servidor " : ""), 
+                (bm.server_action == HYPER_JUMP ? STR_MSG_HYPER_JUMP : ""), 
+                bm.message);
             break;
         case MSG_INVENTORY:
             printf("\nInventário final:\n- Seu HP restante: %d\n- HP inimigo restante: %d\n- Total de turnos jogados: %d\n- Torpedos usados: %d\n- Escudos usados: %d\n", 
