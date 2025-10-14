@@ -35,15 +35,22 @@ int init_socket(int address_family, unsigned short target_port)
         break;
     }
 
-    if (!serv_addr) { return -1; }
+    if (!serv_addr)
+    {
+        close(sock);
+        return -1;
+    }
+    
     if (-1 == bind(sock, serv_addr, (address_family == AF_INET ? sizeof(serv_addr_v4) : sizeof(serv_addr_v6))))
     {
+        close(sock);
         error_handling("bind() error occured", __func__, __LINE__, 1); 
         return 1; 
     }
     
     if (-1 == listen(sock, BACKLOG_SIZE))
     { 
+        close(sock);
         error_handling("listen() error occured", __func__, __LINE__, 1); 
         return 1; 
     }
@@ -62,7 +69,6 @@ int battle(int sock)
     strncpy_safer(bm.message, STR_MSG_WELCOME, sizeof(bm.message));
     if (-1 == send(sock, (void *)&bm, sizeof(bm), 0))
     {
-        close(sock);
         error_handling(ERR_CONNECTION, __func__, __LINE__, 1);
         return 1;
     }
@@ -73,7 +79,6 @@ int battle(int sock)
         strncpy_safer(bm.message, STR_MSG_ACTION_SELECTION, sizeof(bm.message));
         if (-1 == send(sock, (void *)&bm, sizeof(bm), 0))
         {
-            close(sock);
             error_handling(ERR_CONNECTION, __func__, __LINE__, 1);
             return 1;
         }
@@ -81,11 +86,9 @@ int battle(int sock)
         switch (recv(sock, &bm, sizeof(bm), 0))
         {
         case 0:
-            close(sock);
             error_handling("Lost connection to the client.", __func__, __LINE__, 0);
             return 1;
         case -1:
-            close(sock);
             error_handling(ERR_CONNECTION, __func__, __LINE__, 1);
             return 1;
         }
@@ -123,7 +126,6 @@ int battle(int sock)
 
         if (-1 == send(sock, &bm, sizeof(bm), 0))
         {
-            close(sock);
             error_handling(ERR_CONNECTION, __func__, __LINE__, 1);
             return 1;
         }
