@@ -58,6 +58,6 @@ typedef struct
 
 char* strncpy_safer(char* dest, const char* src, size_t n);
 
-void error_handling(const char* errmsg, int errno_exists, int shutdown_program);
+void error_handling(const char* errmsg, const char* func, int line, int errno_exists);
 
 #endif

@@ -12,12 +12,10 @@ char* strncpy_safer(char* dest, const char* src, size_t n)
     return dest;
 }
 
-void error_handling(const char* errmsg, int errno_exists, int shutdown_program)
+void error_handling(const char* errmsg, const char* func, int line, int errno_exists)
 {
-    if (!errmsg) { exit(1); }
+    if (!(errmsg && func)) { return; }
 
-    if (errno_exists) { fprintf(stderr, "%s\nerrno : %d, strerr : %s\n", errmsg, errno, strerror(errno)); }
-    else { fputs(errmsg, stderr); }
-
-    if (shutdown_program) { exit(1); }
+    if (errno_exists) { fprintf(stderr, "%s\nerrno : %d, strerr : %s\nLocation : %s():%d\n", errmsg, errno, strerror(errno), func, line); }
+    else { fprintf(stderr, "%s\nLocation : %s():%d\n", errmsg, func, line); }
 }

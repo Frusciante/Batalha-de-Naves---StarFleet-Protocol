@@ -21,6 +21,7 @@ int init_socket(const char* ip_str, const char* port_str)
     int port;
     int sock;
     int ip_type;
+    char err_buf[64];
 
     if (!(ip_str && port_str))
     {
@@ -49,16 +50,19 @@ int init_socket(const char* ip_str, const char* port_str)
     }
     else
     {
+        error_handling("inet_pton() error", __func__, __LINE__, 0);
         return -3;
     }
 
     sock = socket(ip_type, SOCK_STREAM, 0);
     if (-1 == sock)
     {
+        error_handling("socket() error occured", __func__, __LINE__, 1);
         return -1;
     }
     if (-1 == connect(sock, serv_addr, serv_addr_len))
     {
+        error_handling("connect() error occured", __func__, __LINE__, 1);
         return -1;
     }
 
@@ -83,11 +87,11 @@ int battle(int sock)
         switch (recv(sock, &bm, sizeof(bm), 0))
         {
         case 0:
-            error_handling("Lost connection to the server.\n", 0, 0);
+            error_handling("Lost connection to the server.", __func__, __LINE__, 0);
             return 1;
         case -1:
             close(sock);
-            error_handling(ERR_CONNECTION, 1, 1);
+            error_handling(ERR_CONNECTION, __func__, __LINE__, 1);
             return 2;
         }
         switch (bm.type)
@@ -106,7 +110,7 @@ int battle(int sock)
             if (-1 == send(sock, &bm, sizeof(bm), 0))
             {
                 close(sock);
-                error_handling(ERR_CONNECTION, 1, 1);
+                error_handling(ERR_CONNECTION, __func__, __LINE__, 1);
                 return 2;
             }
             break;

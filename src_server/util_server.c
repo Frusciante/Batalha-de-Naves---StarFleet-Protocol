@@ -6,12 +6,17 @@ static const char* const STR_MSG_ACTION_SELECTION = "\nEscolha sua ação\n0 - L
 
 int init_socket(int address_family, unsigned short target_port)
 {
-    int sock = socket(address_family, SOCK_STREAM, 0);
     struct sockaddr_in serv_addr_v4 = {};
     struct sockaddr_in6 serv_addr_v6 = {};
     struct sockaddr *serv_addr = NULL;
+    char err_buf[ERR_STRING_LEN];
+    int sock = socket(address_family, SOCK_STREAM, 0);
 
-    if (-1 == sock) { return 1; }
+    if (-1 == sock) 
+    { 
+        error_handling("socket() error occured", __func__, __LINE__, 1); 
+        return 1;
+    }
 
     switch (address_family)
     {
@@ -31,9 +36,18 @@ int init_socket(int address_family, unsigned short target_port)
     }
 
     if (!serv_addr) { return -1; }
-    if (-1 == bind(sock, serv_addr, (address_family == AF_INET ? sizeof(serv_addr_v4) : sizeof(serv_addr_v6)))){ return 1; }
-    if (-1 == listen(sock, BACKLOG_SIZE)){ return 1; }
-
+    if (-1 == bind(sock, serv_addr, (address_family == AF_INET ? sizeof(serv_addr_v4) : sizeof(serv_addr_v6))))
+    {
+        error_handling("bind() error occured", __func__, __LINE__, 1); 
+        return 1; 
+    }
+    
+    if (-1 == listen(sock, BACKLOG_SIZE))
+    { 
+        error_handling("listen() error occured", __func__, __LINE__, 1); 
+        return 1; 
+    }
+    
     return sock;
 }
 
@@ -42,12 +56,13 @@ int battle(int sock)
     BattleMessage bm = {};
     Inventory inventory = {100, 100, 0, 0, 0};
     int original_type;
+    char err_buf[ERR_STRING_LEN];
     
     bm.type = MSG_INIT;
     strncpy_safer(bm.message, STR_MSG_WELCOME, sizeof(bm.message));
     if (-1 == send(sock, (void *)&bm, sizeof(bm), 0))
     {
-        error_handling(ERR_CONNECTION, 1, 0);
+        error_handling(ERR_CONNECTION, __func__, __LINE__, 1);
         return 1;
     }
 
@@ -57,19 +72,19 @@ int battle(int sock)
         strncpy_safer(bm.message, STR_MSG_ACTION_SELECTION, sizeof(bm.message));
         if (-1 == send(sock, (void *)&bm, sizeof(bm), 0))
         {
-            error_handling(ERR_CONNECTION, 1, 0);
+            error_handling(ERR_CONNECTION, __func__, __LINE__, 1);
             return 1;
         }
-        
+
         switch (recv(sock, &bm, sizeof(bm), 0))
         {
         case 0:
             close(sock);
-            error_handling("Lost connection to the client.\n", 0, 0);
+            error_handling("Lost connection to the client.", __func__, __LINE__, 0);
             return 1;
         case -1:
             close(sock);
-            error_handling(ERR_CONNECTION, 1, 0);
+            error_handling(ERR_CONNECTION, __func__, __LINE__, 1);
             return 1;
         }
 
@@ -106,7 +121,7 @@ int battle(int sock)
 
         if (-1 == send(sock, &bm, sizeof(bm), 0))
         {
-            error_handling(ERR_CONNECTION, 1, 0);
+            error_handling(ERR_CONNECTION, __func__, __LINE__, 1);
             return 1;
         }
         
@@ -122,7 +137,7 @@ int battle(int sock)
     strncpy_safer(bm.message, "\nFim de Jogo!", sizeof(bm.message));
     if (-1 == send(sock, &bm, sizeof(bm), 0))
     {
-        error_handling(ERR_CONNECTION, 1, 0);
+        error_handling(ERR_CONNECTION, __func__, __LINE__, 1);
         return 1;
     }
 
@@ -144,7 +159,7 @@ int battle(int sock)
     bm.client_action = inventory.total_turns;
     if (-1 == send(sock, &bm, sizeof(bm), 0))
     {
-        error_handling(ERR_CONNECTION, 1, 0);
+        error_handling(ERR_CONNECTION, __func__, __LINE__, 1);
         return 1;
     }
 
