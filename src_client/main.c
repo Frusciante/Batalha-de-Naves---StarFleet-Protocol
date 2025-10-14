@@ -32,25 +32,19 @@ int main(int argc, char* argv[])
         error_handling(error_string, __func__, __LINE__, 0);
         return 1;
     case -2:
-        error_handling("IP or PORT is NULL", __func__, __LINE__, 0);
+        error_handling("IP or PORT is NULL.", __func__, __LINE__, 0);
         return 1;
     case -1:
-        error_handling("Error occured while initizliaing a socket", __func__, __LINE__, 0);
+        error_handling("Error occured while initizliaing a socket.", __func__, __LINE__, 0);
         return 1;
     }
 
-    battle_result = battle(sock);
-    switch (battle_result)
+    if (battle(sock))
     {
-    case 1:
-        close(sock);
         error_handling("The game closed unexpectedly.", __func__, __LINE__, 0);
-        break;
-    
-    case 0:
-        close(sock);
-        break;
     }
     
+    close(sock);
+        
     return 0;
 }

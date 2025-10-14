@@ -62,6 +62,7 @@ int battle(int sock)
     strncpy_safer(bm.message, STR_MSG_WELCOME, sizeof(bm.message));
     if (-1 == send(sock, (void *)&bm, sizeof(bm), 0))
     {
+        close(sock);
         error_handling(ERR_CONNECTION, __func__, __LINE__, 1);
         return 1;
     }
@@ -72,6 +73,7 @@ int battle(int sock)
         strncpy_safer(bm.message, STR_MSG_ACTION_SELECTION, sizeof(bm.message));
         if (-1 == send(sock, (void *)&bm, sizeof(bm), 0))
         {
+            close(sock);
             error_handling(ERR_CONNECTION, __func__, __LINE__, 1);
             return 1;
         }
@@ -121,6 +123,7 @@ int battle(int sock)
 
         if (-1 == send(sock, &bm, sizeof(bm), 0))
         {
+            close(sock);
             error_handling(ERR_CONNECTION, __func__, __LINE__, 1);
             return 1;
         }
