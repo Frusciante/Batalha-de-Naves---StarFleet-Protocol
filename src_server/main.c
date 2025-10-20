@@ -7,12 +7,21 @@ extern const int OPT_ON;
 extern const int KEEP_IDLE_TIME;
 extern const int KEEP_INTERVAL;
 extern const int KEEP_CNT;
+static int serv_sock;
+static int clnt_sock;
+
+static void sig_handler(int sig)
+{
+    close(serv_sock);
+    close(clnt_sock);
+    
+    exit(0);
+}
 
 int main(int argc, char* argv[])
 {
     char clnt_addr_buf[INET6_ADDRSTRLEN] = {};
     int battle_result = 0;
-    int serv_sock = 0;
     int ip_type;
     int port;
     socklen_t clnt_addr_len;
@@ -20,11 +29,12 @@ int main(int argc, char* argv[])
     struct sockaddr_in6 clnt_addr_v6 = {};
     struct sockaddr* clnt_addr = 0;
     char error_string[ERR_STRING_LEN] = {};
-    int clnt_sock;
 
     setlocale(LC_ALL, "");
     srand(time(NULL));
     signal(SIGPIPE, SIG_IGN);
+    signal(SIGINT, SIG_IGN);
+    signal(SIGKILL, SIG_IGN);
 
     if (argc != 3)
     {

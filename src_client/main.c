@@ -3,14 +3,24 @@
 #include <locale.h>
 #include "util_client.h"
 
+static int sock;
+
+static void sig_handler(int sig)
+{
+    close(sock);
+
+    exit(0);
+}
+
 int main(int argc, char* argv[])
 {
     char error_string[ERR_STRING_LEN] = {};
     int battle_result;
-    int sock;
 
     setlocale(LC_ALL, "");
     signal(SIGPIPE, SIG_IGN);
+    signal(SIGKILL, sig_handler);
+    signal(SIGINT, sig_handler);
 
     if (argc != 3)
     {
