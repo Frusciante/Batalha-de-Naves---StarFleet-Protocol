@@ -85,13 +85,18 @@ int battle(int sock)
 
     for (;;)
     {
-        switch (recv(sock, &bm, sizeof(bm), 0))
+        switch (recv_reliable(sock, &bm, sizeof(bm), 0))
         {
+        case sizeof(bm):
+            break;
         case 0:
             error_handling("Lost connection to the server.", __func__, __LINE__, 0);
             return 1;
         case -1:
             error_handling(ERR_CONNECTION, __func__, __LINE__, 1);
+            return 1;
+        default:
+            error_handling("Error occured while receiving data from the server.", __func__, __LINE__, 0);
             return 1;
         }
         switch (bm.type)
@@ -107,11 +112,18 @@ int battle(int sock)
             }
             bm.type = MSG_ACTION_RES;
             bm.client_action = input_int;
-            if (-1 == send(sock, &bm, sizeof(bm), 0))
+            switch (send_reliable(sock, &bm, sizeof(bm), 0))
             {
+            case sizeof(bm):
+                break;
+            case -1:
                 error_handling(ERR_CONNECTION, __func__, __LINE__, 1);
                 return 1;
+            default:
+                error_handling("Error occured while sending data to server.", __func__, __LINE__, 0);
+                return 1;
             }
+            
             break;
         case MSG_BATTLE_RESULT:
             switch (bm.client_action)

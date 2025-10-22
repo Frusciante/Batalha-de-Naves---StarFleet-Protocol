@@ -12,6 +12,8 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
 #include <netinet/tcp.h>
 
 typedef enum 
@@ -59,5 +61,9 @@ typedef struct
 char* strncpy_safer(char* dest, const char* src, size_t n);
 
 void error_handling(const char* errmsg, const char* func, int line, int errno_exists);
+
+ssize_t send_reliable(int sock, const void* buf, size_t buf_size, int flag);
+
+ssize_t recv_reliable(int sock, void* but, size_t buf_size, int flag);
 
 #endif

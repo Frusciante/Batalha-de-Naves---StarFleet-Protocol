@@ -8,6 +8,7 @@ static int sock;
 static void sig_handler(int sig)
 {
     close(sock);
+    puts("Ctrl + C");
 
     exit(0);
 }
@@ -19,7 +20,6 @@ int main(int argc, char* argv[])
 
     setlocale(LC_ALL, "");
     signal(SIGPIPE, SIG_IGN);
-    signal(SIGKILL, sig_handler);
     signal(SIGINT, sig_handler);
 
     if (argc != 3)

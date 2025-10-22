@@ -19,3 +19,55 @@ void error_handling(const char* errmsg, const char* func, int line, int errno_ex
     if (errno_exists) { fprintf(stderr, "%s\nerrno : %d, strerr : %s\nLocation : %s():%d\n", errmsg, errno, strerror(errno), func, line); }
     else { fprintf(stderr, "%s\nLocation : %s():%d\n", errmsg, func, line); }
 }
+
+ssize_t send_reliable(int sock, const void* buf, size_t buf_size, int flag)
+{
+    ssize_t send_size;
+    ssize_t send_size_sum = 0;
+    const char* buf_current_loc = (const char*)buf;
+    
+    if (buf == NULL)
+    {
+        return 0;
+    }
+
+    while (send_size_sum < buf_size)
+    {
+        send_size = send(sock, buf_current_loc, buf_size - send_size_sum, flag);
+        if (send_size < 0)
+        {
+            return send_size;
+        }
+        
+        send_size_sum += send_size;
+        buf_current_loc += send_size;
+    }
+    
+    return buf_size;
+}
+
+ssize_t recv_reliable(int sock, void* buf, size_t buf_size, int flag)
+{
+    ssize_t recv_size;
+    ssize_t recv_size_sum = 0;
+    char* buf_current_loc = (char*)buf;
+    
+    if (buf == NULL)
+    {
+        return 0;
+    }
+
+    while (recv_size_sum < buf_size)
+    {
+        recv_size = recv(sock, buf_current_loc, buf_size - recv_size_sum, flag);
+        if (recv_size <= 0)
+        {
+            return recv_size;
+        }
+        
+        recv_size_sum += recv_size;
+        buf_current_loc += recv_size;
+    }
+    
+    return buf_size;
+}

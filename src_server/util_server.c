@@ -64,12 +64,18 @@ int battle(int sock)
     Inventory inventory = {100, 100, 0, 0, 0};
     int original_type;
     char err_buf[ERR_STRING_LEN];
-    
+
     bm.type = MSG_INIT;
     strncpy_safer(bm.message, STR_MSG_WELCOME, sizeof(bm.message));
-    if (-1 == send(sock, (void *)&bm, sizeof(bm), 0))
+    switch (send_reliable(sock, &bm, sizeof(bm), 0))
     {
+    case sizeof(bm):
+        break;
+    case -1:
         error_handling(ERR_CONNECTION, __func__, __LINE__, 1);
+        return 1;
+    default:
+        error_handling("Error occured while sending data to client.", __func__, __LINE__, 0);
         return 1;
     }
 
@@ -77,19 +83,30 @@ int battle(int sock)
     {
         bm.type = MSG_ACTION_REQ;
         strncpy_safer(bm.message, STR_MSG_ACTION_SELECTION, sizeof(bm.message));
-        if (-1 == send(sock, (void *)&bm, sizeof(bm), 0))
+        switch (send_reliable(sock, &bm, sizeof(bm), 0))
         {
+        case sizeof(bm):
+            break;
+        case -1:
             error_handling(ERR_CONNECTION, __func__, __LINE__, 1);
+            return 1;
+        default:
+            error_handling("Error occured while sending data to client.", __func__, __LINE__, 0);
             return 1;
         }
 
-        switch (recv(sock, &bm, sizeof(bm), 0))
+        switch (recv_reliable(sock, &bm, sizeof(bm), 0))
         {
+        case sizeof(bm):
+            break;
         case 0:
             error_handling("Lost connection to the client.", __func__, __LINE__, 0);
             return 1;
         case -1:
             error_handling(ERR_CONNECTION, __func__, __LINE__, 1);
+            return 1;
+        default:
+            error_handling("Error occured while receiving data from client.", __func__, __LINE__, 0);
             return 1;
         }
 
@@ -120,13 +137,18 @@ int battle(int sock)
 
                 bm.client_hp = inventory.client_hp;
                 bm.server_hp = inventory.server_hp;
-
             }
         }
 
-        if (-1 == send(sock, &bm, sizeof(bm), 0))
+        switch (send_reliable(sock, &bm, sizeof(bm), 0))
         {
+        case sizeof(bm):
+            break;
+        case -1:
             error_handling(ERR_CONNECTION, __func__, __LINE__, 1);
+            return 1;
+        default:
+            error_handling("Error occured while sending data to client.", __func__, __LINE__, 0);
             return 1;
         }
         
@@ -140,9 +162,15 @@ int battle(int sock)
     bm.type = MSG_GAME_OVER;
 
     strncpy_safer(bm.message, "\nFim de Jogo!", sizeof(bm.message));
-    if (-1 == send(sock, &bm, sizeof(bm), 0))
+    switch (send_reliable(sock, &bm, sizeof(bm), 0))
     {
+    case sizeof(bm):
+        break;
+    case -1:
         error_handling(ERR_CONNECTION, __func__, __LINE__, 1);
+        return 1;
+    default:
+        error_handling("Error occured while sending data to client.", __func__, __LINE__, 0);
         return 1;
     }
 
@@ -162,9 +190,16 @@ int battle(int sock)
     bm.server_hp = inventory.server_hp;
     bm.client_torpedoes = inventory.client_torpedoes;
     bm.client_action = inventory.total_turns;
-    if (-1 == send(sock, &bm, sizeof(bm), 0))
+    
+    switch (send_reliable(sock, &bm, sizeof(bm), 0))
     {
+    case sizeof(bm):
+        break;
+    case -1:
         error_handling(ERR_CONNECTION, __func__, __LINE__, 1);
+        return 1;
+    default:
+        error_handling("Error occured while sending data to client.", __func__, __LINE__, 0);
         return 1;
     }
 
