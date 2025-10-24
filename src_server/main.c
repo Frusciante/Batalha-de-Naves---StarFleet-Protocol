@@ -121,10 +121,10 @@ int main(int argc, char* argv[])
             break;
         }        
 
-        setsockopt(clnt_sock, SOL_SOCKET, SO_KEEPALIVE, (void *)&OPT_ON, sizeof(OPT_ON));
-        setsockopt(clnt_sock, IPPROTO_TCP, TCP_KEEPIDLE, (void *)&KEEP_IDLE_TIME, sizeof(KEEP_IDLE_TIME));
-        setsockopt(clnt_sock, IPPROTO_TCP, TCP_KEEPINTVL, (void *)&KEEP_INTERVAL, sizeof(KEEP_INTERVAL));
-        setsockopt(clnt_sock, IPPROTO_TCP, TCP_KEEPCNT, (void *)&KEEP_CNT, sizeof(KEEP_CNT));
+        setsockopt(clnt_sock, SOL_SOCKET, SO_KEEPALIVE, (const void *)&OPT_ON, sizeof(OPT_ON));
+        setsockopt(clnt_sock, IPPROTO_TCP, TCP_KEEPIDLE, (const void *)&KEEP_IDLE_TIME, sizeof(KEEP_IDLE_TIME));
+        setsockopt(clnt_sock, IPPROTO_TCP, TCP_KEEPINTVL, (const void *)&KEEP_INTERVAL, sizeof(KEEP_INTERVAL));
+        setsockopt(clnt_sock, IPPROTO_TCP, TCP_KEEPCNT, (const void *)&KEEP_CNT, sizeof(KEEP_CNT));
 
         battle_result = battle(clnt_sock);
 
