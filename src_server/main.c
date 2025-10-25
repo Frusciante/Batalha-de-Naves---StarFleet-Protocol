@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
     if (argc != 3)
     {
         snprintf(error_string, ERR_STRING_LEN - 1, "Usage : %s <IP type (v4 or v6)> <port>", argv[0]);
-        error_handling(error_string, __func__, __LINE__, 0);
+        error_handling(error_string, __func__, __LINE__);
         return 1;
     }
 
@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
     else
     {
         snprintf(error_string, ERR_STRING_LEN - 1, "IP type should be 'v4' or 'v6'. Your input : %s", argv[1]);
-        error_handling(error_string, __func__, __LINE__, 0);
+        error_handling(error_string, __func__, __LINE__);
         return 1;
     }
 
@@ -56,7 +56,7 @@ int main(int argc, char* argv[])
     if (port <= 1023 || port > 65535)
     {
         snprintf(error_string, ERR_STRING_LEN - 1, "Port should be an integer between 1024 and 65535. Your input : %s", argv[2]);
-        error_handling(error_string, __func__, __LINE__, 0);
+        error_handling(error_string, __func__, __LINE__);
         return 1;
     }
 
@@ -64,10 +64,10 @@ int main(int argc, char* argv[])
     switch (serv_sock)
     {
     case -1:
-        error_handling("NULL pointer error occured.", __func__, __LINE__, 0);
+        error_handling("NULL pointer error occured.", __func__, __LINE__);
         return 1;
     case 1:
-        error_handling("Error occured while initizlizing a socket", __func__, __LINE__, 0);
+        error_handling("Error occured while initizlizing a socket", __func__, __LINE__);
         return 1;
     }
     
@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
         clnt_sock = accept(serv_sock, clnt_addr, &clnt_addr_len);
         if (clnt_sock == -1)
         {
-            error_handling("accpet() error occured", __func__, __LINE__, 1);
+            error_handling("accpet() error occured", __func__, __LINE__);
             continue;
         }
 
@@ -102,7 +102,7 @@ int main(int argc, char* argv[])
             }
             else
             {
-                error_handling("inet_ntop() error occured", __func__, __LINE__, 1);
+                error_handling("inet_ntop() error occured", __func__, __LINE__);
                 close(clnt_sock);
                 continue;
             }
@@ -114,7 +114,7 @@ int main(int argc, char* argv[])
             }
             else
             {
-                error_handling("inet_ntop() error occured", __func__, __LINE__, 1);
+                error_handling("inet_ntop() error occured", __func__, __LINE__);
                 close(clnt_sock);
                 continue;
             }
@@ -135,7 +135,7 @@ int main(int argc, char* argv[])
             break;
 
         default:
-            error_handling("The game closed unexpectedly.", __func__, __LINE__, 0);
+            error_handling("The game closed unexpectedly.", __func__, __LINE__);
             break;
         }
 

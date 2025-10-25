@@ -60,7 +60,7 @@ typedef struct
 
 char* strncpy_safer(char* dest, const char* src, size_t n);
 
-void error_handling(const char* errmsg, const char* func, int line, int errno_exists);
+void error_handling(const char* errmsg, const char* func, int line);
 
 ssize_t send_reliable(int sock, const void* buf, size_t buf_size, int flag);
 

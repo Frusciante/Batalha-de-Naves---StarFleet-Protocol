@@ -14,7 +14,7 @@ int init_socket(int address_family, unsigned short target_port)
 
     if (-1 == sock) 
     { 
-        error_handling("socket() error occured", __func__, __LINE__, 1); 
+        error_handling("socket() error occured", __func__, __LINE__); 
         return 1;
     }
 
@@ -44,14 +44,14 @@ int init_socket(int address_family, unsigned short target_port)
     if (-1 == bind(sock, serv_addr, (address_family == AF_INET ? sizeof(serv_addr_v4) : sizeof(serv_addr_v6))))
     {
         close(sock);
-        error_handling("bind() error occured", __func__, __LINE__, 1); 
+        error_handling("bind() error occured", __func__, __LINE__); 
         return 1; 
     }
     
     if (-1 == listen(sock, BACKLOG_SIZE))
     { 
         close(sock);
-        error_handling("listen() error occured", __func__, __LINE__, 1); 
+        error_handling("listen() error occured", __func__, __LINE__); 
         return 1; 
     }
     
@@ -72,10 +72,10 @@ int battle(int sock)
     case sizeof(bm):
         break;
     case -1:
-        error_handling(ERR_CONNECTION, __func__, __LINE__, 1);
+        error_handling(ERR_CONNECTION, __func__, __LINE__);
         return 1;
     default:
-        error_handling("Error occured while sending data to client.", __func__, __LINE__, 0);
+        error_handling("Error occured while sending data to client.", __func__, __LINE__);
         return 1;
     }
 
@@ -88,10 +88,10 @@ int battle(int sock)
         case sizeof(bm):
             break;
         case -1:
-            error_handling(ERR_CONNECTION, __func__, __LINE__, 1);
+            error_handling(ERR_CONNECTION, __func__, __LINE__);
             return 1;
         default:
-            error_handling("Error occured while sending data to client.", __func__, __LINE__, 0);
+            error_handling("Error occured while sending data to client.", __func__, __LINE__);
             return 1;
         }
 
@@ -100,13 +100,13 @@ int battle(int sock)
         case sizeof(bm):
             break;
         case 0:
-            error_handling("Lost connection to the client.", __func__, __LINE__, 0);
+            error_handling("Lost connection to the client.", __func__, __LINE__);
             return 1;
         case -1:
-            error_handling(ERR_CONNECTION, __func__, __LINE__, 1);
+            error_handling(ERR_CONNECTION, __func__, __LINE__);
             return 1;
         default:
-            error_handling("Error occured while receiving data from client.", __func__, __LINE__, 0);
+            error_handling("Error occured while receiving data from client.", __func__, __LINE__);
             return 1;
         }
 
@@ -145,10 +145,10 @@ int battle(int sock)
         case sizeof(bm):
             break;
         case -1:
-            error_handling(ERR_CONNECTION, __func__, __LINE__, 1);
+            error_handling(ERR_CONNECTION, __func__, __LINE__);
             return 1;
         default:
-            error_handling("Error occured while sending data to client.", __func__, __LINE__, 0);
+            error_handling("Error occured while sending data to client.", __func__, __LINE__);
             return 1;
         }
         
@@ -167,10 +167,10 @@ int battle(int sock)
     case sizeof(bm):
         break;
     case -1:
-        error_handling(ERR_CONNECTION, __func__, __LINE__, 1);
+        error_handling(ERR_CONNECTION, __func__, __LINE__);
         return 1;
     default:
-        error_handling("Error occured while sending data to client.", __func__, __LINE__, 0);
+        error_handling("Error occured while sending data to client.", __func__, __LINE__);
         return 1;
     }
 
@@ -196,10 +196,10 @@ int battle(int sock)
     case sizeof(bm):
         break;
     case -1:
-        error_handling(ERR_CONNECTION, __func__, __LINE__, 1);
+        error_handling(ERR_CONNECTION, __func__, __LINE__);
         return 1;
     default:
-        error_handling("Error occured while sending data to client.", __func__, __LINE__, 0);
+        error_handling("Error occured while sending data to client.", __func__, __LINE__);
         return 1;
     }
 
