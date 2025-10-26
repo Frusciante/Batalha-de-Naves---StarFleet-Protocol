@@ -85,13 +85,13 @@ char* get_str_start_point(const char* str, size_t str_size)
     while (*iter != '\0' && cnt <= str_size)
     {
         iter++;
+        cnt++;
         switch (*start_point)
         {
         case '\n':
         case ' ':
         case '\t':
             start_point++;
-            cnt++;
             break;
         }
     }
