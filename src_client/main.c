@@ -17,7 +17,7 @@ int main(int argc, char* argv[])
 {
     char error_string[ERR_STRING_LEN] = {};
     int battle_result;
-
+    
     setlocale(LC_ALL, "");
     signal(SIGPIPE, SIG_IGN);
     signal(SIGINT, sig_handler);

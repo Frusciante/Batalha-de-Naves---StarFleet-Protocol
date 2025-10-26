@@ -3,7 +3,7 @@
 
 #define MSG_SIZE 256
 #define ERR_STRING_LEN 256
-#define ERR_MSG "Erro: escolha inválida!\nPor favor selecione um valor entre 0 a 4.\n"
+#define ERR_MSG "Erro: escolha inválida!\nPor favor selecione um valor entre 0 a 4."
 #define ERR_CONNECTION "\nError occured. Closing connection..."
 
 #include <string.h>
@@ -65,5 +65,7 @@ void error_handling(const char* errmsg, const char* func, int line);
 ssize_t send_reliable(int sock, const void* buf, size_t buf_size, int flag);
 
 ssize_t recv_reliable(int sock, void* but, size_t buf_size, int flag);
+
+char* get_str_start_point(const char* str, size_t str_size);
 
 #endif

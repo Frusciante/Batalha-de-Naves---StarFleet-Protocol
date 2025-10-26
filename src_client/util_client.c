@@ -78,10 +78,12 @@ int init_socket(const char* ip_str, const char* port_str)
 int battle(int sock)
 {
     BattleMessage bm = {};
-    char input_buffer[12];
+    char input_buffer[20];
     int input_int = -1;
     const char* user_action_str = NULL;
     const char* server_action_str = NULL;
+    char* saveptr = NULL;
+    char* str_start_ptr = NULL;
 
     for (;;)
     {
@@ -101,13 +103,18 @@ int battle(int sock)
         }
         switch (bm.type)
         {
+        case -1:
+            puts(bm.message);
+            break;
         case MSG_ACTION_REQ:
             for (;;)
             {
                 printf("%s", bm.message);
                 fgets(input_buffer, sizeof(input_buffer), stdin);
-                input_int = atoi(input_buffer);
-                if (0 == input_int && 0 != strcmp(input_buffer, "0\n")) { printf(ERR_MSG); }
+                str_start_ptr = get_str_start_point(input_buffer, sizeof(input_buffer));
+                strtok_r(str_start_ptr, " \n\t", &saveptr);
+                input_int = atoi(str_start_ptr);
+                if (0 == input_int && 0 != strcmp(str_start_ptr, "0")) { puts(ERR_MSG); }
                 else { break; }
             }
             bm.type = MSG_ACTION_RES;

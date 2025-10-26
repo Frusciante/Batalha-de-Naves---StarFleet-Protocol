@@ -111,8 +111,9 @@ int battle(int sock)
         }
 
         bm.type = MSG_BATTLE_RESULT;
-        if (bm.client_action < 0 || bm.client_action > 4) 
+        if (bm.client_action < LASER_ATTACK || bm.client_action >= ACTION_CNT) 
         {
+            bm.type = -1;
             strncpy_safer(bm.message, ERR_MSG, sizeof(bm.message));
         }
         else

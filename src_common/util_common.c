@@ -71,3 +71,30 @@ ssize_t recv_reliable(int sock, void* buf, size_t buf_size, int flag)
     
     return buf_size;
 }
+
+char* get_str_start_point(const char* str, size_t str_size)
+{
+    const char* start_point = str;
+    const char* iter = str;
+    size_t cnt = 0;
+    if (!str)   
+    {
+        return NULL;
+    }
+
+    while (*iter != '\0' && cnt <= str_size)
+    {
+        iter++;
+        switch (*start_point)
+        {
+        case '\n':
+        case ' ':
+        case '\t':
+            start_point++;
+            cnt++;
+            break;
+        }
+    }
+    
+    return (char*)start_point; 
+}
