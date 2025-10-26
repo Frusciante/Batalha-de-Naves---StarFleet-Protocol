@@ -82,9 +82,8 @@ int battle(int sock)
     int input_int = -1;
     const char* user_action_str = NULL;
     const char* server_action_str = NULL;
-    char* saveptr = NULL;
     char* str_start_ptr = NULL;
-
+    
     for (;;)
     {
         switch (recv_reliable(sock, &bm, sizeof(bm), 0))
@@ -112,9 +111,8 @@ int battle(int sock)
                 printf("%s", bm.message);
                 fgets(input_buffer, sizeof(input_buffer), stdin);
                 str_start_ptr = get_str_start_point(input_buffer, sizeof(input_buffer));
-                strtok_r(str_start_ptr, " \n\t", &saveptr);
                 input_int = atoi(str_start_ptr);
-                if (0 == input_int && 0 != strcmp(str_start_ptr, "0")) { puts(ERR_MSG); }
+                if (0 == input_int && 0 != strncmp(str_start_ptr, "0", 1)) { puts(ERR_MSG); }
                 else { break; }
             }
             bm.type = MSG_ACTION_RES;
