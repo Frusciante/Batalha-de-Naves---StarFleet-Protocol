@@ -142,7 +142,7 @@ int battle(int sock)
             case SHIELDS_UP:
                 user_action_str = STR_MSG_ESCUDOS;
                 break;
-            case CLOACKING:
+            case CLOAKING:
                 user_action_str = STR_MSG_CLOAKING;
                 break;
             default:
@@ -161,7 +161,7 @@ int battle(int sock)
             case SHIELDS_UP:
                 server_action_str = STR_MSG_ESCUDOS;
                 break;
-            case CLOACKING:
+            case CLOAKING:
                 server_action_str = STR_MSG_CLOAKING;
                 break;
             default:

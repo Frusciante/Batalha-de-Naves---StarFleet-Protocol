@@ -223,7 +223,7 @@ int get_battle_result(BattleMessage *bm, Inventory *inventory)
         case SHIELDS_UP:
             strncpy_safer(bm->message, "Seu ataque bloqueado!\n", sizeof(bm->message));
             break;
-        case CLOACKING:
+        case CLOAKING:
             inventory->server_hp -= 20;
             strncpy_safer(bm->message, "Acerto! Nave inimiga perdeu 20 HP.\n", sizeof(bm->message));
             break;
@@ -245,7 +245,7 @@ int get_battle_result(BattleMessage *bm, Inventory *inventory)
         case SHIELDS_UP:
             strncpy_safer(bm->message, "Seu ataque bloqueado!\n", sizeof(bm->message));
             break;
-        case CLOACKING:
+        case CLOAKING:
             strncpy_safer(bm->message, "Seu ataque falhou!\n", sizeof(bm->message));
             break;
         case LASER_ATTACK:
@@ -264,7 +264,7 @@ int get_battle_result(BattleMessage *bm, Inventory *inventory)
         switch (bm->server_action)
         {
         case SHIELDS_UP:
-        case CLOACKING:
+        case CLOAKING:
             strncpy_safer(bm->message, "Aconteceu nada.\n", sizeof(bm->message));
             break;
         case LASER_ATTACK:
@@ -273,11 +273,11 @@ int get_battle_result(BattleMessage *bm, Inventory *inventory)
             break;
         }
         break;
-    case CLOACKING:
+    case CLOAKING:
         switch (bm->server_action)
         {
         case SHIELDS_UP:
-        case CLOACKING:
+        case CLOAKING:
             strncpy_safer(bm->message, "Aconteceu nada.\n", sizeof(bm->message));
             break;
         case PHOTON_TORPEDO:

@@ -32,7 +32,7 @@ typedef enum
     LASER_ATTACK,
     PHOTON_TORPEDO,
     SHIELDS_UP,
-    CLOACKING,
+    CLOAKING,
     HYPER_JUMP,
     ACTION_CNT
 } Action;
